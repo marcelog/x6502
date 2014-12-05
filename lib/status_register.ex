@@ -205,6 +205,21 @@ defmodule X6502.StatusRegister do
   end
 
   @doc """
+  Returns the carry value.
+
+  ## Examples
+
+      iex> X6502.StatusRegister.carry_value 1
+      1
+
+      iex> X6502.StatusRegister.carry_value 8
+      0
+  """
+  def carry_value(status) do
+    value status, :carry
+  end
+
+  @doc """
   Sets the zero flag.
 
   ## Examples
@@ -349,6 +364,10 @@ defmodule X6502.StatusRegister do
   end
 
   defp set?(status, flag) do
+    ALU.bit_set?(status, @flags[flag]) == 1
+  end
+
+  defp value(status, flag) do
     ALU.bit_set?(status, @flags[flag])
   end
 

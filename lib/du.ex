@@ -40,7 +40,7 @@ defmodule X6502.DU do
     set_3: %{
       0b001 => :bit,
       0b010 => :jmp,
-      0b011 => :jmp_abs,
+      0b011 => :jmp_indirect,
       0b100 => :sty,
       0b101 => :ldy,
       0b110 => :cpy,
@@ -121,7 +121,7 @@ defmodule X6502.DU do
 
   # Source: http://www.llx.com/~nparker/a2/opcodes.html
   def decode(opcode) do
-    {set, op, mode} = real_decode opcode
+    {set, op, mode} = real_decode <<opcode::size(8)>>
     ori_mode_name = @addressing_modes[set][mode]
     mnemonic = @ops[set][op]
     mode_name = case {mnemonic, ori_mode_name} do
@@ -142,7 +142,7 @@ defmodule X6502.DU do
   defp real_decode(<<op::size(8)>> = opbin) do
     case @ops[:set_4][op] do
       nil -> real_decode2 opbin
-      m -> {:set_4, op, nil}
+      _ -> {:set_4, op, nil}
     end
   end
 

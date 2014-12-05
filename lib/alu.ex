@@ -7,18 +7,18 @@ defmodule X6502.ALU do
   ## Examples
 
       iex> X6502.ALU.bit_set? 0x80, 7
-      true
+      1
 
       iex> X6502.ALU.bit_set? 0x80, 0
-      false
+      0
 
       iex> X6502.ALU.bit_set? 0x81, 0
-      true
+      1
   """
-  @spec bit_set?(byte(), non_neg_integer()):: true|false
+  @spec bit_set?(byte(), non_neg_integer()):: 0|1
   def bit_set?(byte, bit) do
     mask = bit_value_in_bytes(bit)
-    (byte &&& mask) == mask
+    (byte &&& mask) >>> bit
   end
 
   @doc """
@@ -145,7 +145,7 @@ defmodule X6502.ALU do
     (~~~(bytea ^^^ byteb)) &&& (bytea ^^^ bytec)
   end
 
-#  @spec two_complement(byte()):: byte()
+  @spec two_complement(byte()):: byte()
   defp two_complement(byte) do
     0x100 - (byte &&& 0xFF)
   end
