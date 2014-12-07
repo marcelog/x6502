@@ -1,7 +1,7 @@
 X6502
 =====
 
-A [6502](http://en.wikipedia.org/wiki/MOS_Technology_6502) CPU emulator written
+A [6502](http://en.wikipedia.org/wiki/MOS_Technology_6502) CPU simulator written
 in [Elixir](elixir-lang.org).
 
 ## TODO
