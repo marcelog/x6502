@@ -28,14 +28,47 @@ defmodule X6502.Memory do
 
       iex> X6502.Memory.new :main, [0x00, 0x01, 0x02, 0x03]
       :main
+      iex> X6502.Memory.peek m, 0x00
+      0x00
+      iex> X6502.Memory.peek m, 0x01
+      0x01
+      iex> X6502.Memory.peek m, 0x02
+      0x02
+      iex> X6502.Memory.peek m, 0x03
+      0x03
 
   """
-  @spec new(atom(), binary()):: atom()
-  def new(name, bytes) do
+  @spec new(atom(), [byte()]|binary()):: atom()
+  def new(name, bytes) when is_list(bytes) do
     m = new name
     Enum.reduce(bytes, 0, fn(b, i) ->
       poke(m, i, b)
       i + 1
+    end)
+    m
+  end
+
+  @doc """
+  Creates a new memory page of up to 65535 bytes with the given binary.
+
+  ## Examples
+
+      iex> m = X6502.Memory.new :main, <<0x00, 0x01, 0x02, 0x03>>
+      iex> X6502.Memory.peek m, 0x00
+      0x00
+      iex> X6502.Memory.peek m, 0x01
+      0x01
+      iex> X6502.Memory.peek m, 0x02
+      0x02
+      iex> X6502.Memory.peek m, 0x03
+      0x03
+  """
+  def new(name, bytes) when is_binary(bytes) do
+    m = new name
+    len = byte_size(bytes) - 1
+    Enum.reduce(0..len, bytes, fn(i, <<b::size(8), r::binary>>) ->
+      poke(m, i, b)
+      r
     end)
     m
   end
