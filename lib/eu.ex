@@ -1,4 +1,5 @@
 defmodule X6502.EU do
+  require Lager
   use Bitwise
 
   @pc_changed_by %{
@@ -24,8 +25,9 @@ defmodule X6502.EU do
   alias X6502.StatusRegister, as: StatusRegister
 
   def execute(instruction = %{mnemonic: mnemonic, bytes: bytes}, state) do
+    %X6502.CPU{registers: registers} = state
     operand_location = AU.address instruction[:mode], state
-#    IO.puts "Executing: #{inspect instruction}"
+    Lager.debug "Executing PC: 0x~4.16.0B: #{mnemonic}, #{instruction[:mode]} with operand at #{operand_location} with registers: #{inspect registers}", [registers[:pc]]
     state = %CPU{registers: registers = %{pc: pc}} = real_execute(
       instruction, operand_location, state
     )
@@ -33,6 +35,7 @@ defmodule X6502.EU do
       true -> pc
       _ -> inc_pc pc, bytes
     end
+    Lager.debug "Result pc at: 0x~4.16.0B: #{inspect registers}", [pc]
     %CPU{state | registers: %{registers | pc: pc}}
   end
 

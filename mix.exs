@@ -2,17 +2,19 @@ defmodule X6502.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :x6502,
-     version: "0.0.1",
-     elixir: "~> 1.0.0-rc2",
-     deps: deps]
+    [
+      app: :x6502,
+      version: "0.0.1",
+      elixir: "~> 1.0.0-rc2",
+      deps: deps
+    ]
   end
 
   # Configuration for the OTP application
   #
   # Type `mix help compile.app` for more information
   def application do
-    [applications: [:logger]]
+    [applications: [:logger, :exlager]]
   end
 
   # Dependencies can be Hex packages:
@@ -25,6 +27,8 @@ defmodule X6502.Mixfile do
   #
   # Type `mix help deps` for more examples and options
   defp deps do
-    []
+    [
+      {:exlager, git: "https://github.com/khia/exlager"}
+    ]
   end
 end
