@@ -1,5 +1,5 @@
 defmodule X6502.EU do
-  require Lager
+  require Logger
   use Bitwise
 
   @pc_changed_by %{
@@ -27,7 +27,8 @@ defmodule X6502.EU do
   def execute(instruction = %{mnemonic: mnemonic, bytes: bytes}, state) do
     %X6502.CPU{registers: registers} = state
     operand_location = AU.address instruction[:mode], state
-    Lager.debug "Executing PC: 0x~4.16.0B: #{mnemonic}, #{instruction[:mode]} with operand at #{operand_location} with registers: #{inspect registers}", [registers[:pc]]
+    pc_fmt = :io_lib.format "0x~4.16.0B", [registers[:pc]]
+    Logger.debug 'Executing PC: #{pc_fmt}: #{mnemonic}, #{instruction[:mode]} with operand at #{operand_location} with registers: #{inspect registers}'
     state = %CPU{registers: registers = %{pc: pc}} = real_execute(
       instruction, operand_location, state
     )
@@ -35,7 +36,8 @@ defmodule X6502.EU do
       true -> pc
       _ -> inc_pc pc, bytes
     end
-    Lager.debug "Result pc at: 0x~4.16.0B: #{inspect registers}", [pc]
+    pc_fmt = :io_lib.format '0x~4.16.0B', [pc]
+    Logger.debug 'Result pc at: #{pc_fmt}: #{inspect registers}'
     %CPU{state | registers: %{registers | pc: pc}}
   end
 
