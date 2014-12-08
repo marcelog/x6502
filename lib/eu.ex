@@ -18,7 +18,6 @@ defmodule X6502.EU do
     jmp_indirect: true
   }
 
-  alias X6502.Memory, as: Memory
   alias X6502.AU, as: AU
   alias X6502.CPU, as: CPU
   alias X6502.ALU, as: ALU
@@ -41,13 +40,14 @@ defmodule X6502.EU do
     %{mnemonic: :lda},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p
       }
     }
   ) do
-    a = Memory.peek memory, operand_location
+    a = mm.peek memory, operand_location
     p = set_sign p, a
     p = set_zero p, a
     registers = %{registers | a: a, p: p}
@@ -58,13 +58,14 @@ defmodule X6502.EU do
     %{mnemonic: :sta},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: %{
         a: a
       }
     }
   ) do
-    Memory.poke memory, operand_location, a
+    mm.poke memory, operand_location, a
     state
   end
 
@@ -72,13 +73,14 @@ defmodule X6502.EU do
     %{mnemonic: :ldx},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p
       }
     }
   ) do
-    x = Memory.peek memory, operand_location
+    x = mm.peek memory, operand_location
     p = set_sign p, x
     p = set_zero p, x
     registers = %{registers | x: x, p: p}
@@ -89,13 +91,14 @@ defmodule X6502.EU do
     %{mnemonic: :stx},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: %{
         x: x
       }
     }
   ) do
-    Memory.poke memory, operand_location, x
+    mm.poke memory, operand_location, x
     state
   end
 
@@ -103,13 +106,14 @@ defmodule X6502.EU do
     %{mnemonic: :ldy},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p
       }
     }
   ) do
-    y = Memory.peek memory, operand_location
+    y = mm.peek memory, operand_location
     p = set_sign p, y
     p = set_zero p, y
     registers = %{registers | y: y, p: p}
@@ -120,13 +124,14 @@ defmodule X6502.EU do
     %{mnemonic: :sty},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: %{
         y: y
       }
     }
   ) do
-    Memory.poke memory, operand_location, y
+    mm.poke memory, operand_location, y
     state
   end
 
@@ -134,6 +139,7 @@ defmodule X6502.EU do
     %{mnemonic: :adc},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         a: a,
@@ -141,7 +147,7 @@ defmodule X6502.EU do
       }
     }
   ) do
-    operand = Memory.peek memory, operand_location
+    operand = mm.peek memory, operand_location
     carry = StatusRegister.carry_value p
     {new_carry, new_overflow, result} = ALU.adc a, operand, carry
     a = result
@@ -156,6 +162,7 @@ defmodule X6502.EU do
     %{mnemonic: :and},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         a: a,
@@ -163,7 +170,7 @@ defmodule X6502.EU do
       }
     }
   ) do
-    a = a &&& Memory.peek(memory, operand_location)
+    a = a &&& mm.peek(memory, operand_location)
     p = set_sign p, a
     p = set_zero p, a
     %CPU{state | registers: %{registers | p: p, a: a}}
@@ -173,6 +180,7 @@ defmodule X6502.EU do
     %{mnemonic: :bit},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         a: a,
@@ -180,7 +188,7 @@ defmodule X6502.EU do
       }
     }
   ) do
-    operand = Memory.peek memory, operand_location
+    operand = mm.peek memory, operand_location
     result = a &&& operand
     p = set_zero p, result
     p = set_sign p, operand
@@ -192,6 +200,7 @@ defmodule X6502.EU do
     %{mnemonic: :cmp},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         a: a,
@@ -199,7 +208,7 @@ defmodule X6502.EU do
       }
     }
   ) do
-    operand_bin = Memory.peek memory, operand_location
+    operand_bin = mm.peek memory, operand_location
     {new_carry, _, result} = ALU.sbc a, operand_bin
     p = StatusRegister.set_carry p, new_carry
     p = set_sign p, result
@@ -211,6 +220,7 @@ defmodule X6502.EU do
     %{mnemonic: :eor},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         a: a,
@@ -218,7 +228,7 @@ defmodule X6502.EU do
       }
     }
   ) do
-    a = a ^^^ Memory.peek(memory, operand_location)
+    a = a ^^^ mm.peek(memory, operand_location)
     p = set_sign p, a
     p = set_zero p, a
     %CPU{state | registers: %{registers | p: p, a: a}}
@@ -228,6 +238,7 @@ defmodule X6502.EU do
     %{mnemonic: :ora},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         a: a,
@@ -235,7 +246,7 @@ defmodule X6502.EU do
       }
     }
   ) do
-    a = a ||| Memory.peek(memory, operand_location)
+    a = a ||| mm.peek(memory, operand_location)
     p = set_sign p, a
     p = set_zero p, a
     %CPU{state | registers: %{registers | p: p, a: a}}
@@ -245,6 +256,7 @@ defmodule X6502.EU do
     %{mnemonic: :sbc},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         a: a,
@@ -253,7 +265,7 @@ defmodule X6502.EU do
     }
   ) do
     carry = StatusRegister.carry_value p
-    operand = Memory.peek memory, operand_location
+    operand = mm.peek memory, operand_location
     {new_carry, new_overflow, result} = ALU.sbc a, operand, carry
     a = result
     p = set_sign p, a
@@ -267,17 +279,18 @@ defmodule X6502.EU do
     %{mnemonic: :inc},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p
       }
     }
   ) do
-    operand = Memory.peek memory, operand_location
+    operand = mm.peek memory, operand_location
     result = (operand + 1) &&& 0xFF
     p = set_sign p, result
     p = set_zero p, result
-    Memory.poke memory, operand_location, result
+    mm.poke memory, operand_location, result
     %CPU{state | registers: %{registers | p: p}}
   end
 
@@ -285,17 +298,18 @@ defmodule X6502.EU do
     %{mnemonic: :dec},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p
       }
     }
   ) do
-    operand = Memory.peek memory, operand_location
+    operand = mm.peek memory, operand_location
     result = (operand - 1) &&& 0xFF
     p = set_sign p, result
     p = set_zero p, result
-    Memory.poke memory, operand_location, result
+    mm.poke memory, operand_location, result
     %CPU{state | registers: %{registers | p: p}}
   end
 
@@ -303,6 +317,7 @@ defmodule X6502.EU do
     %{mnemonic: :cpx},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         x: x,
@@ -310,7 +325,7 @@ defmodule X6502.EU do
       }
     }
   ) do
-    operand = Memory.peek memory, operand_location
+    operand = mm.peek memory, operand_location
     {new_carry, _, result} = ALU.sbc x, operand
     p = StatusRegister.set_carry p, new_carry
     p = set_sign p, result
@@ -322,6 +337,7 @@ defmodule X6502.EU do
     %{mnemonic: :cpy},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         y: y,
@@ -329,7 +345,7 @@ defmodule X6502.EU do
       }
     }
   ) do
-    operand = Memory.peek memory, operand_location
+    operand = mm.peek memory, operand_location
     {new_carry, _, result} = ALU.sbc y, operand
     p = StatusRegister.set_carry p, new_carry
     p = set_sign p, result
@@ -341,6 +357,7 @@ defmodule X6502.EU do
     %{mnemonic: :jmp_indirect},
     _operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         pc: pc
@@ -357,18 +374,18 @@ defmodule X6502.EU do
     # the one stored in 10FF and 1100). This defect continued through the
     # entire NMOS line, but was corrected in the CMOS derivatives.
     pc = inc_pc pc, 1
-    pc_l = Memory.peek memory, pc
+    pc_l = mm.peek memory, pc
     pre_pc_l = pc_l
     pc = inc_pc pc, 1
-    pc_h = Memory.peek memory, pc
+    pc_h = mm.peek memory, pc
     pc = X6502.AU.to_16bits pc_h, pc_l
 
-    pc_l = Memory.peek memory, pc
+    pc_l = mm.peek memory, pc
     pc_h = case pre_pc_l do
-      0xFF -> Memory.peek memory, (X6502.AU.to_16bits pc_h, 0x00)
+      0xFF -> mm.peek memory, (X6502.AU.to_16bits pc_h, 0x00)
       _ ->
         pc = inc_pc pc, 1
-        Memory.peek memory, pc
+        mm.peek memory, pc
     end
     pc = X6502.AU.to_16bits pc_h, pc_l
     %CPU{state | registers: %{registers | pc: pc}}
@@ -378,6 +395,7 @@ defmodule X6502.EU do
     %{mnemonic: :jmp},
     _operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         pc: pc
@@ -386,9 +404,9 @@ defmodule X6502.EU do
   ) do
 
     pc = inc_pc pc, 1
-    pc_l = Memory.peek memory, pc
+    pc_l = mm.peek memory, pc
     pc = inc_pc pc, 1
-    pc_h = Memory.peek memory, pc
+    pc_h = mm.peek memory, pc
 
     pc = X6502.AU.to_16bits pc_h, pc_l
     %CPU{state | registers: %{registers | pc: pc}}
@@ -398,6 +416,7 @@ defmodule X6502.EU do
     %{mnemonic: :bcc},
     nil,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p,
@@ -407,7 +426,7 @@ defmodule X6502.EU do
   ) do
 
     pc = inc_pc pc, 1
-    disp = Memory.peek memory, pc
+    disp = mm.peek memory, pc
     pc = inc_pc pc, 1
 
     pc_h = (pc >>> 8) &&& 0xFF
@@ -426,6 +445,7 @@ defmodule X6502.EU do
     %{mnemonic: :bcs},
     nil,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p,
@@ -435,7 +455,7 @@ defmodule X6502.EU do
   ) do
 
     pc = inc_pc pc, 1
-    disp = Memory.peek memory, pc
+    disp = mm.peek memory, pc
     pc = inc_pc pc, 1
 
     pc_h = (pc >>> 8) &&& 0xFF
@@ -454,6 +474,7 @@ defmodule X6502.EU do
     %{mnemonic: :beq},
     nil,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p,
@@ -463,7 +484,7 @@ defmodule X6502.EU do
   ) do
 
     pc = inc_pc pc, 1
-    disp = Memory.peek memory, pc
+    disp = mm.peek memory, pc
     pc = inc_pc pc, 1
 
     pc_h = (pc >>> 8) &&& 0xFF
@@ -482,6 +503,7 @@ defmodule X6502.EU do
     %{mnemonic: :bmi},
     nil,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p,
@@ -491,7 +513,7 @@ defmodule X6502.EU do
   ) do
 
     pc = inc_pc pc, 1
-    disp = Memory.peek memory, pc
+    disp = mm.peek memory, pc
     pc = inc_pc pc, 1
 
     pc_h = (pc >>> 8) &&& 0xFF
@@ -510,6 +532,7 @@ defmodule X6502.EU do
     %{mnemonic: :bne},
     nil,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p,
@@ -519,7 +542,7 @@ defmodule X6502.EU do
   ) do
 
     pc = inc_pc pc, 1
-    disp = Memory.peek memory, pc
+    disp = mm.peek memory, pc
     pc = inc_pc pc, 1
 
     pc_h = (pc >>> 8) &&& 0xFF
@@ -538,6 +561,7 @@ defmodule X6502.EU do
     %{mnemonic: :bpl},
     nil,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p,
@@ -547,7 +571,7 @@ defmodule X6502.EU do
   ) do
 
     pc = inc_pc pc, 1
-    disp = Memory.peek memory, pc
+    disp = mm.peek memory, pc
     pc = inc_pc pc, 1
 
     pc_h = (pc >>> 8) &&& 0xFF
@@ -566,6 +590,7 @@ defmodule X6502.EU do
     %{mnemonic: :bvc},
     nil,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p,
@@ -575,7 +600,7 @@ defmodule X6502.EU do
   ) do
 
     pc = inc_pc pc, 1
-    disp = Memory.peek memory, pc
+    disp = mm.peek memory, pc
     pc = inc_pc pc, 1
 
     pc_h = (pc >>> 8) &&& 0xFF
@@ -594,6 +619,7 @@ defmodule X6502.EU do
     %{mnemonic: :bvs},
     nil,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p,
@@ -603,7 +629,7 @@ defmodule X6502.EU do
   ) do
 
     pc = inc_pc pc, 1
-    disp = Memory.peek memory, pc
+    disp = mm.peek memory, pc
     pc = inc_pc pc, 1
 
     pc_h = (pc >>> 8) &&& 0xFF
@@ -622,6 +648,7 @@ defmodule X6502.EU do
     %{mnemonic: :jsr},
     nil,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         sp: sp,
@@ -630,16 +657,16 @@ defmodule X6502.EU do
     }
   ) do
     ret_pc = inc_pc pc, 1
-    new_pc_l = Memory.peek memory, ret_pc
+    new_pc_l = mm.peek memory, ret_pc
 
     ret_pc = inc_pc ret_pc, 1
-    new_pc_h = Memory.peek memory, ret_pc
+    new_pc_h = mm.peek memory, ret_pc
 
     ret_pc_h = (ret_pc >>> 8) &&& 0xFF
     ret_pc_l = ret_pc &&& 0xFF
 
-    new_sp_1 = push memory, ret_pc_h, sp
-    new_sp_2 = push memory, ret_pc_l, new_sp_1
+    new_sp_1 = push mm, memory, ret_pc_h, sp
+    new_sp_2 = push mm, memory, ret_pc_l, new_sp_1
 
     new_pc = X6502.AU.to_16bits(new_pc_h, new_pc_l)
     %CPU{state | registers: %{registers | pc: new_pc, sp: new_sp_2}}
@@ -649,14 +676,15 @@ defmodule X6502.EU do
     %{mnemonic: :rts},
     nil,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         sp: sp
       }
     }
   ) do
-    {new_pc_l, new_sp_1} = pop memory, sp
-    {new_pc_h, new_sp_2} = pop memory, new_sp_1
+    {new_pc_l, new_sp_1} = pop mm, memory, sp
+    {new_pc_h, new_sp_2} = pop mm, memory, new_sp_1
     new_pc = X6502.AU.to_16bits(new_pc_h, new_pc_l)
     new_pc = inc_pc new_pc, 1
     %CPU{state | registers: %{registers | pc: new_pc, sp: new_sp_2}}
@@ -836,20 +864,21 @@ defmodule X6502.EU do
     %{mnemonic: :rol},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p
       }
     }
   ) do
-    data = Memory.peek memory, operand_location
+    data = mm.peek memory, operand_location
     c = ALU.bit_set? data, 7
     data = (data <<< 1) &&& 0xFF
     data = data ||| c
     p = StatusRegister.set_carry p, c
     p = set_zero p, data
     p = set_sign p, data
-    Memory.poke memory, operand_location, data
+    mm.poke memory, operand_location, data
     %CPU{state | registers: %{registers | p: p}}
   end
 
@@ -876,20 +905,21 @@ defmodule X6502.EU do
     %{mnemonic: :ror},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p
       }
     }
   ) do
-    data = Memory.peek memory, operand_location
+    data = mm.peek memory, operand_location
     c = ALU.bit_set? data, 0
     data = (data >>> 1) &&& 0xFF
     data = data ||| (c <<< 7)
     p = StatusRegister.set_carry p, c
     p = set_zero p, data
     p = set_sign p, data
-    Memory.poke memory, operand_location, data
+    mm.poke memory, operand_location, data
     %CPU{state | registers: %{registers | p: p}}
   end
 
@@ -915,19 +945,20 @@ defmodule X6502.EU do
     %{mnemonic: :asl},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p
       }
     }
   ) do
-    data = Memory.peek memory, operand_location
+    data = mm.peek memory, operand_location
     c = ALU.bit_set? data, 7
     data = (data <<< 1) &&& 0xFF
     p = StatusRegister.set_carry p, c
     p = set_zero p, data
     p = set_sign p, data
-    Memory.poke memory, operand_location, data
+    mm.poke memory, operand_location, data
     %CPU{state | registers: %{registers | p: p}}
   end
 
@@ -953,19 +984,20 @@ defmodule X6502.EU do
     %{mnemonic: :lsr},
     operand_location,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p
       }
     }
   ) do
-    data = Memory.peek memory, operand_location
+    data = mm.peek memory, operand_location
     c = ALU.bit_set? data, 0
     data = (data >>> 1) &&& 0xFF
     p = StatusRegister.set_carry p, c
     p = set_zero p, data
     p = set_sign p, 0
-    Memory.poke memory, operand_location, data
+    mm.poke memory, operand_location, data
     %CPU{state | registers: %{registers | p: p}}
   end
 
@@ -973,6 +1005,7 @@ defmodule X6502.EU do
     %{mnemonic: :pha},
     nil,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         a: a,
@@ -980,7 +1013,7 @@ defmodule X6502.EU do
       }
     }
   ) do
-    new_sp_0 = push memory, a, sp
+    new_sp_0 = push mm, memory, a, sp
     %CPU{state | registers: %{registers | sp: new_sp_0}}
   end
 
@@ -988,6 +1021,7 @@ defmodule X6502.EU do
     %{mnemonic: :pla},
     nil,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         sp: sp,
@@ -995,7 +1029,7 @@ defmodule X6502.EU do
       }
     }
   ) do
-    {new_a, new_sp_0} = pop memory, sp
+    {new_a, new_sp_0} = pop mm, memory, sp
     p = set_zero p, new_a
     p = set_sign p, new_a
     %CPU{state | registers: %{registers | p: p, a: new_a, sp: new_sp_0}}
@@ -1005,6 +1039,7 @@ defmodule X6502.EU do
     %{mnemonic: :php},
     nil,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p,
@@ -1012,7 +1047,7 @@ defmodule X6502.EU do
       }
     }
   ) do
-    new_sp_0 = push memory, p, sp
+    new_sp_0 = push mm, memory, p, sp
     %CPU{state | registers: %{registers | sp: new_sp_0}}
   end
 
@@ -1020,13 +1055,14 @@ defmodule X6502.EU do
     %{mnemonic: :plp},
     nil,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         sp: sp
       }
     }
   ) do
-    {new_p, new_sp_0} = pop memory, sp
+    {new_p, new_sp_0} = pop mm, memory, sp
     %CPU{state | registers: %{registers | p: new_p, sp: new_sp_0}}
   end
 
@@ -1060,15 +1096,16 @@ defmodule X6502.EU do
     %{mnemonic: :rti},
     nil,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         sp: sp
       }
     }
   ) do
-    {new_p, new_sp_0} = pop memory, sp
-    {new_pc_l, new_sp_1} = pop memory, new_sp_0
-    {new_pc_h, new_sp_2} = pop memory, new_sp_1
+    {new_p, new_sp_0} = pop mm, memory, sp
+    {new_pc_l, new_sp_1} = pop mm, memory, new_sp_0
+    {new_pc_h, new_sp_2} = pop mm, memory, new_sp_1
     new_pc = (X6502.AU.to_16bits(new_pc_h, new_pc_l)) &&& 0xFFFF
     %CPU{state | registers: %{registers | p: new_p, pc: new_pc, sp: new_sp_2}}
   end
@@ -1077,6 +1114,7 @@ defmodule X6502.EU do
     %{mnemonic: :brk},
     nil,
     state = %CPU{
+      mm: mm,
       memory: memory,
       registers: registers = %{
         p: p,
@@ -1085,16 +1123,16 @@ defmodule X6502.EU do
       }
     }
   ) do
-    new_pc_h = Memory.peek memory, 0xFFFF
-    new_pc_l = Memory.peek memory, 0xFFFE
+    new_pc_h = mm.peek memory, 0xFFFF
+    new_pc_l = mm.peek memory, 0xFFFE
     new_pc = X6502.AU.to_16bits new_pc_h, new_pc_l
 
     current_pc = inc_pc current_pc, 2
     current_pc_h = (current_pc >>> 8) &&& 0xFF
     current_pc_l = current_pc &&& 0xFF
-    new_sp_1 = push memory, current_pc_h, sp
-    new_sp_2 = push memory, current_pc_l, new_sp_1
-    new_sp = push memory, p, new_sp_2
+    new_sp_1 = push mm, memory, current_pc_h, sp
+    new_sp_2 = push mm, memory, current_pc_l, new_sp_1
+    new_sp = push mm, memory, p, new_sp_2
 
     p = StatusRegister.set_break p
     p = StatusRegister.set_interrupt_disable p
@@ -1172,16 +1210,16 @@ defmodule X6502.EU do
   ##############################################################################
   # Some helpers.
   ##############################################################################
-  defp push(memory, byte, sp) do
+  defp push(mm, memory, byte, sp) do
     address = X6502.AU.to_16bits 0x01, sp
-    Memory.poke memory, address, byte
+    mm.poke memory, address, byte
     X6502.AU.inc_address_8 sp, -1
   end
 
-  defp pop(memory, sp) do
+  defp pop(mm, memory, sp) do
     new_sp = X6502.AU.inc_address_8 sp, 1
     address = X6502.AU.to_16bits 0x01, new_sp
-    byte = Memory.peek memory, address
+    byte = mm.peek memory, address
     {byte, new_sp}
   end
 

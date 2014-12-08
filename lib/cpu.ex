@@ -1,11 +1,10 @@
 defmodule X6502.CPU do
-  defstruct registers: %{}, memory: %{}
+  defstruct registers: %{}, memory: %{}, mm: nil
 
-  alias X6502.Memory, as: Memory
   alias X6502.DU, as: DU
   alias X6502.EU, as: EU
 
-  def new(memory_bytes) do
+  def new(memory_bytes, mm \\ X6502.Memory) do
     %X6502.CPU{
       registers: %{
         a: 0x00,
@@ -15,13 +14,14 @@ defmodule X6502.CPU do
         x: 0x00,
         y: 0x00
       },
-      memory: Memory.new(:main, memory_bytes)
+      mm: mm,
+      memory: mm.new(:main, memory_bytes)
     }
   end
 
-  def next(state = %X6502.CPU{memory: memory, registers: registers}) do
+  def next(state = %X6502.CPU{mm: mm, memory: memory, registers: registers}) do
     pc= registers[:pc]
-    instruction = DU.decode Memory.peek(memory, pc)
+    instruction = DU.decode mm.peek(memory, pc)
     EU.execute instruction, state
   end
 end

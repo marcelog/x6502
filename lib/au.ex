@@ -1,6 +1,5 @@
 defmodule X6502.AU do
   use Bitwise
-  alias X6502.Memory, as: Memory
   alias X6502.CPU, as: CPU
 
   @doc """
@@ -9,19 +8,19 @@ defmodule X6502.AU do
   ## Examples
       iex> X6502.AU.address(
       ...>   :accumulator,
-      ...>   %X6502.CPU{registers: %{pc: 0x00}}
+      ...>   %X6502.CPU{mm: X6502.Memory, registers: %{pc: 0x00}}
       ...> )
       nil
 
       iex> X6502.AU.address(
       ...>   :implied,
-      ...>   %X6502.CPU{registers: %{pc: 0x00}}
+      ...>   %X6502.CPU{mm: X6502.Memory, registers: %{pc: 0x00}}
       ...> )
       nil
 
       iex> X6502.AU.address(
       ...>   :immediate,
-      ...>   %X6502.CPU{registers: %{pc: 0x0055}}
+      ...>   %X6502.CPU{mm: X6502.Memory, registers: %{pc: 0x0055}}
       ...> )
       0x56
 
@@ -30,6 +29,7 @@ defmodule X6502.AU do
       ...>   :zero_page_direct,
       ...>   %X6502.CPU{
       ...>     memory: m,
+      ...>     mm: X6502.Memory,
       ...>     registers: %{
       ...>       pc: 0x0001
       ...>     }
@@ -45,6 +45,7 @@ defmodule X6502.AU do
       ...>   :zero_page_preindex,
       ...>   %X6502.CPU{
       ...>     memory: m,
+      ...>     mm: X6502.Memory,
       ...>     registers: %{
       ...>       pc: 0x0033,
       ...>       x: 0x01
@@ -61,6 +62,7 @@ defmodule X6502.AU do
       ...>   :zero_page_postindex,
       ...>   %X6502.CPU{
       ...>     memory: m,
+      ...>     mm: X6502.Memory,
       ...>     registers: %{
       ...>       pc: 0x0033,
       ...>       y: 0x01
@@ -75,6 +77,7 @@ defmodule X6502.AU do
       ...>   :zero_page_indexed_x,
       ...>   %X6502.CPU{
       ...>     memory: m,
+      ...>     mm: X6502.Memory,
       ...>     registers: %{
       ...>       pc: 0x0033,
       ...>       x: 0x01
@@ -89,6 +92,7 @@ defmodule X6502.AU do
       ...>   :zero_page_indexed_y,
       ...>   %X6502.CPU{
       ...>     memory: m,
+      ...>     mm: X6502.Memory,
       ...>     registers: %{
       ...>       pc: 0x0033,
       ...>       y: 0x01
@@ -104,6 +108,7 @@ defmodule X6502.AU do
       ...>   :absolute_indexed_x,
       ...>   %X6502.CPU{
       ...>     memory: m,
+      ...>     mm: X6502.Memory,
       ...>     registers: %{
       ...>       pc: 0x0033,
       ...>       x: 0x01
@@ -119,6 +124,7 @@ defmodule X6502.AU do
       ...>   :absolute_indexed_y,
       ...>   %X6502.CPU{
       ...>     memory: m,
+      ...>     mm: X6502.Memory,
       ...>     registers: %{
       ...>       pc: 0x0033,
       ...>       y: 0x01
@@ -148,18 +154,20 @@ defmodule X6502.AU do
   # Uses the second -- or second and third (if not on zero, or base page) -- of
   # the instruction to identify the address of an operand in memory.
   def address(:zero_page_direct, %CPU{
+    mm: mm,
     memory: memory,
     registers: %{pc: pc}
   }) do
-    to_16bits 0, Memory.peek(memory, inc_pc(pc))
+    to_16bits 0, mm.peek(memory, inc_pc(pc))
   end
 
   def address(:absolute, %CPU{
+    mm: mm,
     memory: memory,
     registers: %{pc: pc}
   }) do
-    l = Memory.peek memory, inc_pc(pc, 1)
-    h = Memory.peek memory, inc_pc(pc, 2)
+    l = mm.peek memory, inc_pc(pc, 1)
+    h = mm.peek memory, inc_pc(pc, 2)
     to_16bits h, l
   end
 
@@ -167,17 +175,18 @@ defmodule X6502.AU do
   # register to access a memory location in the first 256 bytes of memory, where
   # the indirect address will be found.
   def address(:zero_page_preindex, %CPU{
+    mm: mm,
     memory: memory,
     registers: %{
       pc: pc,
       x: x
     }
   }) do
-    op_address = Memory.peek memory, inc_pc(pc, 1)
+    op_address = mm.peek memory, inc_pc(pc, 1)
     pre_address_l = inc_address op_address, x
     pre_address_h = inc_address pre_address_l, 1
-    l = Memory.peek memory, pre_address_l
-    h = Memory.peek memory, pre_address_h
+    l = mm.peek memory, pre_address_l
+    h = mm.peek memory, pre_address_h
     to_16bits h, l
   end
 
@@ -186,6 +195,7 @@ defmodule X6502.AU do
   # which is added to the contents of the Y Index register to obtain the
   # effective address.
   def address(:zero_page_postindex, %CPU{
+    mm: mm,
     memory: memory,
     registers: %{
       pc: pc,
@@ -193,10 +203,10 @@ defmodule X6502.AU do
     }
   }) do
     pre_address_l = to_16bits(
-      0, Memory.peek(memory, inc_pc(pc, 1))
+      0, mm.peek(memory, inc_pc(pc, 1))
     )
-    l = Memory.peek memory, pre_address_l
-    h = Memory.peek memory, inc_address(pre_address_l, 1)
+    l = mm.peek memory, pre_address_l
+    h = mm.peek memory, inc_address(pre_address_l, 1)
     inc_address to_16bits(h, l), y
   end
 
@@ -204,50 +214,54 @@ defmodule X6502.AU do
   # instruction to specify the base address. That base address is then added to
   # the contents of the Index Register X or Y to get the effective address.
   def address(:zero_page_indexed_x, %CPU{
+    mm: mm,
     memory: memory,
     registers: %{
       pc: pc,
       x: x
     }
   }) do
-    op_address = Memory.peek memory, inc_pc(pc, 1)
+    op_address = mm.peek memory, inc_pc(pc, 1)
     address = inc_address_8 op_address, x
     to_16bits 0, address
   end
 
   def address(:zero_page_indexed_y, %CPU{
+    mm: mm,
     memory: memory,
     registers: %{
       pc: pc,
       y: y
     }
   }) do
-    op_address = Memory.peek memory, inc_pc(pc, 1)
+    op_address = mm.peek memory, inc_pc(pc, 1)
     address = inc_address_8 op_address, y
     to_16bits 0, address
   end
 
   def address(:absolute_indexed_x, %CPU{
+    mm: mm,
     memory: memory,
     registers: %{
       pc: pc,
       x: x
     }
   }) do
-    l = Memory.peek memory, inc_pc(pc, 1)
-    h = Memory.peek memory, inc_pc(pc, 2)
+    l = mm.peek memory, inc_pc(pc, 1)
+    h = mm.peek memory, inc_pc(pc, 2)
     inc_address to_16bits(h, l), x
   end
 
   def address(:absolute_indexed_y, %CPU{
+    mm: mm,
     memory: memory,
     registers: %{
       pc: pc,
       y: y
     }
   }) do
-    l = Memory.peek memory, inc_pc(pc, 1)
-    h = Memory.peek memory, inc_pc(pc, 2)
+    l = mm.peek memory, inc_pc(pc, 1)
+    h = mm.peek memory, inc_pc(pc, 2)
     inc_address to_16bits(h, l), y
   end
 
