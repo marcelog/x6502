@@ -4,18 +4,18 @@ defmodule X6502.CPU do
   alias X6502.DU, as: DU
   alias X6502.EU, as: EU
 
-  def new(_, mm \\ X6502.Memory)
-  def new(memory_bytes, mm) when is_list(memory_bytes) do
+  def new(_, mm \\ X6502.Memory, pc \\ 0x0000)
+  def new(memory_bytes, mm, pc) when is_list(memory_bytes) do
     %X6502.CPU{
-      registers: create_registers,
+      registers: create_registers(pc),
       mm: mm,
       memory: mm.new(:main, memory_bytes)
     }
   end
 
-  def new(memory_data, mm) do
+  def new(memory_data, mm, pc) do
     %X6502.CPU{
-      registers: create_registers,
+      registers: create_registers(pc),
       mm: mm,
       memory: memory_data
     }
@@ -27,10 +27,10 @@ defmodule X6502.CPU do
     EU.execute instruction, state
   end
 
-  defp create_registers do
+  defp create_registers(pc) do
     %{
       a: 0x00,
-      pc: 0x00,
+      pc: pc,
       sp: 0xFF,
       p: 36, # I = 1, Bit5 = 1
       x: 0x00,
